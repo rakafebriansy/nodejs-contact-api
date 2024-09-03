@@ -1,0 +1,8 @@
+import joi from "joi";
+
+export const createContactValidation = joi.object({
+    first_name: joi.string().max(100).required(),
+    last_name: joi.string().max(100).required(),
+    email: joi.string().max(200).email().required(),
+    phone: joi.string().max(20).required(),
+});
