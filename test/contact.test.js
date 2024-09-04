@@ -1,5 +1,5 @@
 import supertest from "supertest";
-import { createTestContact, createTestUser, getTestContact, removeAllTestContacts, removeTestUser } from "./test-util";
+import { createManyTestContacts, createTestContact, createTestUser, getTestContact, removeAllTestContacts, removeTestUser } from "./test-util";
 import { web } from "../src/app/web";
 
 describe('POST /api/contacts', () => {
@@ -174,5 +174,83 @@ describe('DELETE /api/contacts/:contactId', () => {
 
         expect(result.status).toBe(404);
         expect(result.body.errors).toBeDefined();
+    });
+});
+
+describe('GET /api/contacts', () => {
+    beforeAll(async () => {
+        await createTestUser();
+        await createManyTestContacts();
+    });
+    afterAll(async () => {
+        await removeAllTestContacts();
+        await removeTestUser();
+    });
+    it('should can search without params', async () => {
+        const result = await supertest(web)
+        .get('/api/contacts')
+        .set('Authorization','test');
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(10);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_pages).toBe(2);
+        expect(result.body.paging.total_items).toBe(15);
+    });
+    it('should can search specific page by page number', async () => {
+        const result = await supertest(web)
+        .get('/api/contacts')
+        .query({
+            page: 2
+        })
+        .set('Authorization','test');
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(5);
+        expect(result.body.paging.page).toBe(2);
+        expect(result.body.paging.total_pages).toBe(2);
+        expect(result.body.paging.total_items).toBe(15);
+    });
+    it('should can search specific page by name', async () => {
+        const result = await supertest(web)
+        .get('/api/contacts')
+        .query({
+            name: 'test 1'
+        })
+        .set('Authorization','test');
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(6);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_pages).toBe(1);
+        expect(result.body.paging.total_items).toBe(6);
+    });
+    it('should can search specific page by email', async () => {
+        const result = await supertest(web)
+        .get('/api/contacts')
+        .query({
+            email: 'test1'
+        })
+        .set('Authorization','test');
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(6);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_pages).toBe(1);
+        expect(result.body.paging.total_items).toBe(6);
+    });
+    it('should can search specific page by phone', async () => {
+        const result = await supertest(web)
+        .get('/api/contacts')
+        .query({
+            phone: '08123456781'
+        })
+        .set('Authorization','test');
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.length).toBe(6);
+        expect(result.body.paging.page).toBe(1);
+        expect(result.body.paging.total_pages).toBe(1);
+        expect(result.body.paging.total_items).toBe(6);
     });
 });

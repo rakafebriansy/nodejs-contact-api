@@ -1,6 +1,6 @@
 import { request } from "express";
 import { prismaClient } from "../app/database";
-import { createContactValidation, getContactValidation, updateContactValidation } from "../validations/contact-validation"
+import { createContactValidation, getContactValidation, searchContactValidation, updateContactValidation } from "../validations/contact-validation"
 import { validate } from "../validations/validation"
 import { ResponseError } from "../errors/response-error";
 
@@ -105,9 +105,83 @@ const remove = async (user, contactId) => {
     return result;
 }
 
+const search = async (user, request) => {
+    request = validate(searchContactValidation, request);
+
+    const skip = (request.page - 1) * request.size;
+    
+    const filters = [];
+
+    filters.push({
+        username: user.username
+    });
+
+    if(request.name) {
+        filters.push(
+        {
+            OR: [
+                {
+                    first_name: {
+                        contains: request.name,
+                    },
+                },
+                {
+                    last_name: {
+                        contains: request.name
+                    }
+                }
+            ]
+        });
+    }
+
+    if(request.email) {
+        filters.push(                
+        {
+            email: {
+                contains: request.email
+            }
+        });
+    }
+
+    if(request.phone) {
+        filters.push(                
+        {
+            phone: {
+                contains: request.phone
+            }
+        });
+    }
+
+    const contacts = await prismaClient.contact.findMany({
+        where: {
+            AND: filters
+        },
+        take: request.size,
+        skip: skip
+    });
+
+    const totalItems = await prismaClient.contact.count({
+        where: {
+            AND: filters
+        }
+    });
+
+    const result = {
+        data: contacts,
+        paging: {
+            page: request.page,
+            total_items: totalItems,
+            total_pages: Math.ceil(totalItems/request.size)
+        }
+    };
+
+    return result;
+}
+
 export default {
     create,
     get,
     update,
-    remove
+    remove,
+    search
 }
