@@ -10,7 +10,8 @@ userRouter.patch('/api/users/current', userController.update);
 userRouter.delete('/api/users/logout', userController.logout);
 
 userRouter.post('/api/contacts', contactController.create);
-userRouter.post('/api/contacts/:contactId', contactController.get);
+userRouter.get('/api/contacts/:contactId', contactController.get);
+userRouter.put('/api/contacts/:contactId', contactController.update);
 
 export {
     userRouter
