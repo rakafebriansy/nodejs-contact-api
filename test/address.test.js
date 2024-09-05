@@ -1,5 +1,5 @@
 import supertest from "supertest";
-import { createTestContact, createTestUser, getTestContact, removeAllTestAddresses, removeAllTestContacts, removeTestUser } from "./test-util";
+import { createTestAddress, createTestContact, createTestUser, getTestAddress, getTestContact, removeAllTestAddresses, removeAllTestContacts, removeTestUser } from "./test-util";
 import { web } from "../src/app/web";
 
 describe('POST /api/contacts/:contactId/addresses', () => {
@@ -23,7 +23,7 @@ describe('POST /api/contacts/:contactId/addresses', () => {
             city: 'Kota test',
             province: 'Provinsi test',
             country: 'Negara test',
-            postal_code: '69818'
+            postal_code: '12345'
         });
 
         expect(result.status).toBe(200);
@@ -32,7 +32,7 @@ describe('POST /api/contacts/:contactId/addresses', () => {
         expect(result.body.data.city).toBe('Kota test');
         expect(result.body.data.province).toBe('Provinsi test');
         expect(result.body.data.country).toBe('Negara test');
-        expect(result.body.data.postal_code).toBe('69818');
+        expect(result.body.data.postal_code).toBe('12345');
     });
     it('should reject if requests are invalid', async () =>{
         const testContact = await getTestContact();
@@ -53,7 +53,6 @@ describe('POST /api/contacts/:contactId/addresses', () => {
     });
     it('should reject if contact is not found', async () =>{
         const testContact = await getTestContact();
-        console.log(testContact);
 
         const result = await supertest(web)
         .post('/api/contacts/' + (testContact.id + 1) + '/addresses')
@@ -63,8 +62,59 @@ describe('POST /api/contacts/:contactId/addresses', () => {
             city: 'Kota test',
             province: 'Provinsi test',
             country: 'Negara test',
-            postal_code: '69818'
+            postal_code: '12345'
         });
+
+        expect(result.status).toBe(404);
+        expect(result.body.errors).toBeDefined();
+    });
+});
+
+describe('GET /api/contacts/:contactId/addresses/:addressId', () => {
+    beforeEach(async () => {
+        await createTestUser();
+        await createTestContact();
+        await createTestAddress();
+    });
+    afterEach(async () => {
+        await removeAllTestAddresses();
+        await removeAllTestContacts();
+        await removeTestUser();
+    });
+    it('should can get address', async () =>{
+        const testContact = await getTestContact();
+        const testAddress = await getTestAddress();
+        
+        const result = await supertest(web)
+        .get('/api/contacts/' + testContact.id  + '/addresses/' + testAddress.id)
+        .set('Authorization','test');
+
+        expect(result.status).toBe(200);
+        expect(result.body.data.id).toBeDefined();
+        expect(result.body.data.street).toBe('Jalan test');
+        expect(result.body.data.city).toBe('Kota test');
+        expect(result.body.data.province).toBe('Provinsi test');
+        expect(result.body.data.country).toBe('Negara test');
+        expect(result.body.data.postal_code).toBe('12345');
+    });
+    it('should reject if contact is not found', async () =>{
+        const testContact = await getTestContact();
+        const testAddress = await getTestAddress();
+        
+        const result = await supertest(web)
+        .get('/api/contacts/' + (testContact.id + 1)  + '/addresses/' + testAddress.id)
+        .set('Authorization','test');
+
+        expect(result.status).toBe(404);
+        expect(result.body.errors).toBeDefined();
+    });
+    it('should reject if address is not found', async () =>{
+        const testContact = await getTestContact();
+        const testAddress = await getTestAddress();
+        
+        const result = await supertest(web)
+        .get('/api/contacts/' + testContact.id  + '/addresses/' + (testAddress.id + 1))
+        .set('Authorization','test');
 
         expect(result.status).toBe(404);
         expect(result.body.errors).toBeDefined();
