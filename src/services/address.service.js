@@ -1,7 +1,7 @@
 import { prismaClient } from "../app/database"
 import { logger } from "../app/logging";
 import { ResponseError } from "../errors/response-error";
-import { createAddressValidation, getAddressValidation } from "../validations/address-validation";
+import { createAddressValidation, getAddressValidation, updateAddressValidation } from "../validations/address-validation";
 import { getContactValidation } from "../validations/contact-validation"
 import { validate } from "../validations/validation"
 
@@ -69,7 +69,48 @@ const get  = async (user, contactId, addressId) => {
     return address;
 }
 
+const update = async (user, contactId, request) => {
+    contactId = await checkContactMustExists(user, contactId);
+
+    const addressRequest = validate(updateAddressValidation, request);
+
+    const totalAddressInDatabase = await prismaClient.address.count({
+        where: {
+            contact_id: contactId,
+            id: addressRequest.id
+        },
+    });
+
+    if(totalAddressInDatabase !== 1) {
+        throw new ResponseError(404, 'Address is not found');
+    }
+
+    const address = await prismaClient.address.update({
+        where: {
+            id: addressRequest.id
+        },
+        data: {
+            street: addressRequest.street,
+            city: addressRequest.city,
+            province: addressRequest.province,
+            country: addressRequest.country,
+            postal_code: addressRequest.postal_code,
+        },
+        select: {
+            id: true,
+            street: true,
+            province: true,
+            city: true,
+            country: true,
+            postal_code: true,
+        }
+    });
+
+    return address;
+}
+
 export default {
     create,
-    get
+    get,
+    update
 }
